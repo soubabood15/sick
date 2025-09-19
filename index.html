@@ -24,7 +24,8 @@
 <body>
   <div class="card" id="loginBox">
     <h2>🔑 تسجيل دخول</h2>
-    <input type="email" id="email" placeholder="الإيميل (مثال emp@emp.com أو lead@tl.com)">
+    <input type="email" id="email" placeholder="الإيميل">
+    <input type="password" id="password" placeholder="كلمة المرور">
     <button id="btnLogin" class="primary">دخول</button>
     <p id="loginError" style="color:red"></p>
   </div>
@@ -60,18 +61,42 @@
       <h2>📑 مراجعة الأعذار</h2>
       <button id="btnLogoutLead" class="danger">🚪 خروج</button>
     </div>
+
+    <h3>🕓 الأعذار المعلقة</h3>
     <table>
       <thead><tr><th>الموظف</th><th>الأيام</th><th>الرابط</th><th>الحالة</th><th>إجراء</th></tr></thead>
-      <tbody id="allExcuses"></tbody>
+      <tbody id="pendingExcuses"></tbody>
+    </table>
+
+    <h3>✅ الأعذار المقبولة</h3>
+    <table>
+      <thead><tr><th>الموظف</th><th>الأيام</th><th>الرابط</th><th>الحالة</th></tr></thead>
+      <tbody id="approvedExcuses"></tbody>
     </table>
   </div>
 
   <script type="module">
-    // 📌 Cloudinary config
+    // ✅ Firebase config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCakP9nqvZuFZO3mXQ3jPBDT3JOcH0W3jY",
+      authDomain: "sick-leave-80f29.firebaseapp.com",
+      projectId: "sick-leave-80f29",
+      storageBucket: "sick-leave-80f29.appspot.com",
+      messagingSenderId: "381297448748",
+      appId: "1:381297448748:web:9090c072007c0fc7fd3e89"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ✅ Cloudinary config
     const CLOUD_NAME = "dq0y6h0z6";   
     const UPLOAD_PRESET = "sicklLcs"; 
 
-    // قاعدة بيانات مؤقتة (مصفوفة)
+    // مصفوفة مؤقتة بدل قاعدة بيانات
     let excuses = [];
 
     // عناصر DOM
@@ -79,6 +104,7 @@
     const employeeArea = document.getElementById("employeeArea");
     const leaderArea = document.getElementById("leaderArea");
     const emailEl = document.getElementById("email");
+    const passwordEl = document.getElementById("password");
     const loginError = document.getElementById("loginError");
     const btnLogin = document.getElementById("btnLogin");
     const btnLogoutEmp = document.getElementById("btnLogoutEmp");
@@ -89,56 +115,69 @@
     const btnUpload = document.getElementById("btnUpload");
     const uploadStatus = document.getElementById("uploadStatus");
     const myExcusesTable = document.getElementById("myExcuses");
-    const allExcusesTable = document.getElementById("allExcuses");
+    const pendingExcusesTable = document.getElementById("pendingExcuses");
+    const approvedExcusesTable = document.getElementById("approvedExcuses");
 
     let currentUser = null;
 
-    // تسجيل الدخول
-    btnLogin.addEventListener("click", () => {
+    // ✅ تسجيل الدخول من Firebase
+    btnLogin.addEventListener("click", async () => {
       const email = emailEl.value.trim().toLowerCase();
-      if (!email) { loginError.textContent = "❌ أدخل الإيميل"; return; }
+      const password = passwordEl.value.trim();
+      if (!email || !password) {
+        loginError.textContent = "❌ أدخل الإيميل وكلمة المرور";
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        console.error(err);
+        loginError.textContent = "❌ بيانات الدخول غير صحيحة";
+      }
+    });
 
-      if (email.endsWith("@emp.com")) {
-        currentUser = { role:"employee", email };
+    // ✅ متابعة حالة المستخدم
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
         loginBox.classList.add("hidden");
-        employeeArea.classList.remove("hidden");
-        refreshMyExcuses();
-      } 
-      else if (email.endsWith("@tl.com")) {
-        currentUser = { role:"leader", email };
-        loginBox.classList.add("hidden");
-        leaderArea.classList.remove("hidden");
-        refreshAllExcuses();
-      } 
-      else {
-        loginError.textContent = "❌ الإيميل غير صحيح";
+        if (user.email.endsWith("@emp.com")) {
+          employeeArea.classList.remove("hidden");
+          refreshMyExcuses();
+        } else if (user.email.endsWith("@tl.com")) {
+          leaderArea.classList.remove("hidden");
+          refreshAllExcuses();
+        }
+      } else {
+        currentUser = null;
+        loginBox.classList.remove("hidden");
+        employeeArea.classList.add("hidden");
+        leaderArea.classList.add("hidden");
       }
     });
 
     // تسجيل خروج
-    btnLogoutEmp.addEventListener("click", () => {
-      currentUser = null;
-      employeeArea.classList.add("hidden");
-      loginBox.classList.remove("hidden");
-    });
-    btnLogoutLead.addEventListener("click", () => {
-      currentUser = null;
-      leaderArea.classList.add("hidden");
-      loginBox.classList.remove("hidden");
-    });
+    btnLogoutEmp.addEventListener("click", () => signOut(auth));
+    btnLogoutLead.addEventListener("click", () => signOut(auth));
 
-    // رفع العذر
+    // ✅ رفع العذر
     btnUpload.addEventListener("click", async () => {
       const empId = empIdEl.value.trim();
       const days = daysEl.value.trim();
       const file = fileEl.files[0];
+
+      const hasPending = excuses.some(e => e.email === currentUser.email && e.status === "بانتظار");
+      if (hasPending) {
+        uploadStatus.textContent = "⚠️ لديك عذر بانتظار القبول. لا يمكنك رفع آخر.";
+        return;
+      }
+
       if (!empId || !days || !file) { 
         uploadStatus.textContent = "⚠️ أدخل كل الحقول"; 
         return; 
       }
 
       uploadStatus.textContent = "⏳ جاري الرفع...";
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", UPLOAD_PRESET);
@@ -169,9 +208,8 @@
       }
     });
 
-    // تحديث أعذار الموظف
+    // ✅ تحديث أعذار الموظف
     function refreshMyExcuses(){
-      if (!currentUser || currentUser.role !== "employee") return;
       myExcusesTable.innerHTML = "";
       excuses.filter(e => e.email === currentUser.email).forEach(e => {
         const tr = document.createElement("tr");
@@ -182,23 +220,28 @@
       });
     }
 
-    // تحديث الأعذار للتيم ليدر
+    // ✅ تحديث أعذار التيم ليدر
     function refreshAllExcuses(){
-      if (!currentUser || currentUser.role !== "leader") return;
-      allExcusesTable.innerHTML = "";
+      pendingExcusesTable.innerHTML = "";
+      approvedExcusesTable.innerHTML = "";
       excuses.forEach(e => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
-                        <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
-                        <td>${e.status}</td>
-                        <td>${e.status==="بانتظار" 
-                          ? `<button class="success" onclick="acceptExcuse(${e.id})">قبول ✅</button>` 
-                          : "—"}</td>`;
-        allExcusesTable.appendChild(tr);
+        if (e.status === "بانتظار") {
+          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
+                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
+                          <td>${e.status}</td>
+                          <td><button class="success" onclick="acceptExcuse(${e.id})">قبول ✅</button></td>`;
+          pendingExcusesTable.appendChild(tr);
+        } else if (e.status === "تم القبول") {
+          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
+                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
+                          <td>${e.status}</td>`;
+          approvedExcusesTable.appendChild(tr);
+        }
       });
     }
 
-    // قبول العذر
+    // ✅ قبول العذر
     window.acceptExcuse = (id) => {
       excuses = excuses.map(e => 
         e.id===id ? {...e, status:"تم القبول", acceptedAt: Date.now()} : e
@@ -207,7 +250,7 @@
       refreshMyExcuses();
     };
 
-    // تنظيف الأعذار المقبولة بعد 3 أيام
+    // ✅ تنظيف الأعذار المقبولة بعد 3 أيام
     function cleanupExcuses(){
       const now = Date.now();
       excuses = excuses.filter(e => 
