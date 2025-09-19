@@ -4,219 +4,245 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📄 نظام الأعذار الطبية</title>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family:'Tajawal',sans-serif; background:#f0f2f5; max-width:900px; margin:auto; padding:20px; }
-    .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.1); margin-bottom:20px; }
-    input,button { width:100%; padding:10px; margin:8px 0; font-size:14px; }
-    button { cursor:pointer; border:none; border-radius:5px; background:#2980B9; color:#fff; }
+    body { font-family: sans-serif; background:#f4f6f8; max-width:950px; margin:auto; padding:20px; }
+    .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.1); margin-bottom:20px; }
+    input,button { width:100%; padding:10px; margin:8px 0; font-size:15px; }
+    button { cursor:pointer; border:none; border-radius:5px; background:#2980B9; color:#fff; font-weight:bold; }
+    button:hover { background:#1f6390; }
     table { width:100%; border-collapse:collapse; margin-top:15px; font-size:14px; }
     th,td { border:1px solid #ddd; padding:8px; text-align:center; }
     th { background:#f9fafc; }
-    .status-pending { color:orange; font-weight:bold; }
-    .status-approved { color:green; font-weight:bold; }
-    .status-rejected { color:red; font-weight:bold; }
     .hidden { display:none; }
-    .btn-danger { background:#e74c3c; }
+    .logout { background:#e74c3c; }
+    .logout:hover { background:#c0392b; }
   </style>
 </head>
 <body>
 
   <h2>📄 نظام الأعذار الطبية</h2>
 
-  <!-- ✅ تسجيل دخول -->
-  <div class="card" id="loginBox">
+  <!-- تسجيل الدخول -->
+  <div id="loginBox" class="card">
     <h3>🔑 تسجيل دخول</h3>
-    <input type="email" id="email" placeholder="الإيميل (مثال: emp1@emp.com أو lead1@tl.com)" />
-    <input type="password" id="password" placeholder="كلمة المرور" />
+    <input type="email" id="email" placeholder="أدخل الإيميل (مثال: ali@emp.com أو leader@tl.com)" />
     <button id="btnLogin">دخول</button>
-    <p id="loginError" style="color:red;font-weight:bold;margin:6px 0 0;"></p>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
-  <!-- ✅ شريط معلومات -->
-  <div class="card hidden" id="whoBar">
-    <b>📧 الحساب:</b> <span id="whoEmail"></span> | 
-    <b>🎭 الدور:</b> <span id="whoRole"></span>
-    <button id="btnLogout" class="btn-danger" style="float:left">🚪 خروج</button>
+  <!-- واجهة الموظف -->
+  <div id="employeeArea" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3>📤 واجهة الموظف</h3>
+      <button id="btnLogoutEmp" class="logout">🚪 خروج</button>
+    </div>
+    <div class="card">
+      <h3>📤 رفع عذر جديد</h3>
+      <input type="text" id="empNumber" placeholder="الرقم الوظيفي" inputmode="numeric" />
+      <label>📅 بداية الغياب</label>
+      <input type="date" id="startDate" />
+      <label>📅 نهاية الغياب</label>
+      <input type="date" id="endDate" />
+      <input type="file" id="excuseFile" accept="image/*,.pdf" />
+      <button id="btnSubmit">إرسال العذر</button>
+      <p id="uploadStatus"></p>
+    </div>
+
+    <div class="card">
+      <h3>📋 أعذاري</h3>
+      <table>
+        <thead>
+          <tr><th>رقم وظيفي</th><th>الفترة</th><th>الملف</th><th>الحالة</th></tr>
+        </thead>
+        <tbody id="employeeTable"></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- ✅ واجهة الموظف -->
-  <div class="card hidden" id="employeeArea">
-    <h3>📤 رفع عذر جديد (موظف)</h3>
-    <input type="text" id="empNumber" placeholder="الرقم الوظيفي" inputmode="numeric" />
-    <label>📅 بداية الغياب</label>
-    <input type="date" id="startDate" />
-    <label>📅 نهاية الغياب</label>
-    <input type="date" id="endDate" />
-    <input type="file" id="excuseFile" accept="image/*,.pdf" />
-    <button id="btnSubmit">إرسال العذر</button>
-    <h3>📋 أعذاري</h3>
-    <table>
-      <thead><tr><th>رقم وظيفي</th><th>الفترة</th><th>الملف</th><th>الحالة</th></tr></thead>
-      <tbody id="excusesTable"></tbody>
-    </table>
-  </div>
+  <!-- واجهة التيم ليدر -->
+  <div id="leaderArea" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3>📋 واجهة التيم ليدر</h3>
+      <button id="btnLogoutLeader" class="logout">🚪 خروج</button>
+    </div>
+    <div class="card">
+      <h3>⏳ الأعذار المعلقة</h3>
+      <table>
+        <thead><tr><th>رقم وظيفي</th><th>الفترة</th><th>الملف</th><th>إجراء</th></tr></thead>
+        <tbody id="pendingTable"></tbody>
+      </table>
+    </div>
 
-  <!-- ✅ واجهة التيم ليدر -->
-  <div class="card hidden" id="leaderArea">
-    <h3>🧑‍💼 أعذار الموظفين (تيم ليدر)</h3>
-    <table>
-      <thead><tr><th>رقم وظيفي</th><th>الفترة</th><th>الملف</th><th>الحالة</th><th>إجراء</th></tr></thead>
-      <tbody id="leaderTable"></tbody>
-    </table>
+    <div class="card">
+      <h3>✅ الأعذار المقبولة مني</h3>
+      <table>
+        <thead><tr><th>رقم وظيفي</th><th>الفترة</th><th>الملف</th><th>الحالة</th></tr></thead>
+        <tbody id="approvedTable"></tbody>
+      </table>
+    </div>
   </div>
 
   <script type="module">
-    // ✅ Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
-    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+    // ✅ إعداد Cloudinary
+    const CLOUD_NAME = "ضع_هنا_cloud_name";
+    const UPLOAD_PRESET = "ضع_هنا_upload_preset";
 
-    // إعداد Firebase
+    // ✅ إعداد Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
     const firebaseConfig = {
-      apiKey: "AIzaSyCakP9nqvZuFZO3mXQ3jPBDT3JOcH0W3jY",
+      apiKey: "ضع_هنا_apiKey",
       authDomain: "sick-leave-80f29.firebaseapp.com",
+      databaseURL: "https://sick-leave-80f29-default-rtdb.firebaseio.com",
       projectId: "sick-leave-80f29",
       storageBucket: "sick-leave-80f29.appspot.com",
       messagingSenderId: "381297448748",
-      appId: "1:381297448748:web:9090c072007c0fc7fd3e89",
-      databaseURL: "https://sick-leave-80f29-default-rtdb.firebaseio.com"
+      appId: "1:381297448748:web:9090c072007c0fc7fd3e89"
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getDatabase(app);
-    const storage = getStorage(app);
+    const excusesRef = ref(db, "excuses");
 
-    // DOM elements
+    // ✅ عناصر الصفحة
     const loginBox=document.getElementById("loginBox");
     const emailEl=document.getElementById("email");
-    const passEl=document.getElementById("password");
     const btnLogin=document.getElementById("btnLogin");
     const loginError=document.getElementById("loginError");
-    const whoBar=document.getElementById("whoBar");
-    const whoEmail=document.getElementById("whoEmail");
-    const whoRole=document.getElementById("whoRole");
-    const btnLogout=document.getElementById("btnLogout");
+
     const employeeArea=document.getElementById("employeeArea");
     const leaderArea=document.getElementById("leaderArea");
+
+    const btnLogoutEmp=document.getElementById("btnLogoutEmp");
+    const btnLogoutLeader=document.getElementById("btnLogoutLeader");
+
     const empNumber=document.getElementById("empNumber");
     const startDate=document.getElementById("startDate");
     const endDate=document.getElementById("endDate");
     const excuseFile=document.getElementById("excuseFile");
     const btnSubmit=document.getElementById("btnSubmit");
-    const excusesTable=document.getElementById("excusesTable");
-    const leaderTable=document.getElementById("leaderTable");
+    const uploadStatus=document.getElementById("uploadStatus");
+    const employeeTable=document.getElementById("employeeTable");
 
-    // تسجيل الدخول
-    btnLogin.addEventListener("click", async ()=>{
-      loginError.textContent="";
-      try {
-        await signInWithEmailAndPassword(auth, emailEl.value, passEl.value);
-      } catch(e) {
-        loginError.textContent="❌ بيانات الدخول غير صحيحة";
-      }
-    });
+    const pendingTable=document.getElementById("pendingTable");
+    const approvedTable=document.getElementById("approvedTable");
 
-    // مراقبة الدخول
-    onAuthStateChanged(auth, (user)=>{
-      if(user){
+    let currentUserEmail="";
+    let currentRole="";
+
+    // ✅ تسجيل الدخول
+    btnLogin.addEventListener("click", ()=>{
+      const email=emailEl.value.trim().toLowerCase();
+      if(!email){ loginError.textContent="⚠️ أدخل الإيميل"; return; }
+
+      if(email.endsWith("@emp.com")){
+        currentUserEmail=email;
+        currentRole="employee";
         loginBox.classList.add("hidden");
-        whoBar.classList.remove("hidden");
-        whoEmail.textContent = user.email;
-
-        // تحديد الدور من الإيميل
-        let role="employee";
-        if(user.email.endsWith("@tl.com")) role="leader";
-        else if(user.email.endsWith("@emp.com")) role="employee";
-
-        whoRole.textContent=role;
-
-        if(role==="leader"){ showLeaderUI(); }
-        else { showEmployeeUI(user.uid); }
-
+        employeeArea.classList.remove("hidden");
+      } else if(email.endsWith("@tl.com")){
+        currentUserEmail=email;
+        currentRole="leader";
+        loginBox.classList.add("hidden");
+        leaderArea.classList.remove("hidden");
       } else {
-        loginBox.classList.remove("hidden");
-        whoBar.classList.add("hidden");
-        employeeArea.classList.add("hidden");
-        leaderArea.classList.add("hidden");
+        loginError.textContent="⚠️ الإيميل يجب أن ينتهي بـ @emp.com أو @tl.com";
       }
     });
 
-    btnLogout.addEventListener("click", ()=>signOut(auth));
-
-    // واجهة الموظف
-    function showEmployeeUI(uid){
-      employeeArea.classList.remove("hidden");
-      leaderArea.classList.add("hidden");
-
-      // تحميل أعذاري
-      onValue(ref(db,"excuses"),(snap)=>{
-        const data=snap.val()||{};
-        excusesTable.innerHTML="";
-        Object.entries(data).filter(([k,e])=>e.userId===uid).forEach(([k,e])=>{
-          excusesTable.innerHTML+=`
-            <tr>
-              <td>${e.empNumber}</td>
-              <td>${e.startDate} → ${e.endDate}</td>
-              <td><a href="${e.fileUrl}" target="_blank">📎 عرض</a></td>
-              <td class="status-${e.status}">${e.status}</td>
-            </tr>`;
-        });
-      });
-
-      // إرسال عذر
-      btnSubmit.onclick = async ()=>{
-        if(!empNumber.value||!startDate.value||!endDate.value||!excuseFile.files[0]){
-          alert("⚠️ أدخل كل البيانات");return;
-        }
-        const file=excuseFile.files[0];
-        const fileRef=sRef(storage,"excuses/"+uid+"/"+Date.now()+"_"+file.name);
-        await uploadBytes(fileRef,file);
-        const url=await getDownloadURL(fileRef);
-
-        await push(ref(db,"excuses"),{
-          userId:uid,
-          empNumber:empNumber.value,
-          startDate:startDate.value,
-          endDate:endDate.value,
-          fileUrl:url,
-          status:"pending"
-        });
-        alert("✅ تم رفع العذر");
-        empNumber.value=""; startDate.value=""; endDate.value=""; excuseFile.value="";
-      }
-    }
-
-    // واجهة التيم ليدر
-    function showLeaderUI(){
-      leaderArea.classList.remove("hidden");
+    // ✅ تسجيل الخروج
+    function logout(){
+      currentUserEmail="";
+      currentRole="";
       employeeArea.classList.add("hidden");
+      leaderArea.classList.add("hidden");
+      loginBox.classList.remove("hidden");
+      emailEl.value="";
+    }
+    btnLogoutEmp.addEventListener("click", logout);
+    btnLogoutLeader.addEventListener("click", logout);
 
-      onValue(ref(db,"excuses"),(snap)=>{
-        const data=snap.val()||{};
-        leaderTable.innerHTML="";
-        Object.entries(data).forEach(([k,e])=>{
-          leaderTable.innerHTML+=`
+    // ✅ رفع العذر (للموظف)
+    btnSubmit?.addEventListener("click", async ()=>{
+      if(!empNumber.value || !startDate.value || !endDate.value || !excuseFile.files[0]){
+        alert("⚠️ أدخل كل البيانات");return;
+      }
+      const file=excuseFile.files[0];
+      const formData=new FormData();
+      formData.append("file",file);
+      formData.append("upload_preset",UPLOAD_PRESET);
+
+      uploadStatus.textContent="⏳ جاري رفع الملف...";
+      try{
+        const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,{method:"POST",body:formData});
+        const data=await res.json();
+        if(data.secure_url){
+          await push(excusesRef,{
+            empNumber:empNumber.value,
+            startDate:startDate.value,
+            endDate:endDate.value,
+            fileUrl:data.secure_url,
+            status:"pending",
+            createdBy: currentUserEmail
+          });
+          uploadStatus.textContent="✅ تم رفع العذر";
+          empNumber.value=""; startDate.value=""; endDate.value=""; excuseFile.value="";
+        }else{
+          uploadStatus.textContent="❌ خطأ في رفع الملف";
+        }
+      }catch(err){
+        console.error(err);
+        uploadStatus.textContent="❌ خطأ أثناء الرفع";
+      }
+    });
+
+    // ✅ عرض البيانات
+    onValue(excusesRef,(snap)=>{
+      const data=snap.val()||{};
+      employeeTable.innerHTML="";
+      pendingTable.innerHTML="";
+      approvedTable.innerHTML="";
+
+      Object.entries(data).forEach(([id,e])=>{
+        if(currentRole==="employee" && e.createdBy===currentUserEmail){
+          employeeTable.innerHTML+=`
             <tr>
               <td>${e.empNumber}</td>
               <td>${e.startDate} → ${e.endDate}</td>
               <td><a href="${e.fileUrl}" target="_blank">📎 عرض</a></td>
-              <td class="status-${e.status}">${e.status}</td>
-              <td>
-                <button onclick="updateStatus('${k}','approved')">✅ قبول</button>
-                <button onclick="updateStatus('${k}','rejected')" class="btn-danger">❌ رفض</button>
-              </td>
+              <td>${e.status}</td>
             </tr>`;
-        });
-      });
-    }
+        }
 
-    // تحديث الحالة
-    window.updateStatus = async (id,status)=>{
-      await update(ref(db,"excuses/"+id),{ status:status });
-    };
+        if(currentRole==="leader"){
+          if(e.status==="pending"){
+            pendingTable.innerHTML+=`
+              <tr>
+                <td>${e.empNumber}</td>
+                <td>${e.startDate} → ${e.endDate}</td>
+                <td><a href="${e.fileUrl}" target="_blank">📎 عرض</a></td>
+                <td><button onclick="approveExcuse('${id}')">✅ قبول</button></td>
+              </tr>`;
+          } else if(e.status==="approved" && e.approvedBy===currentUserEmail){
+            approvedTable.innerHTML+=`
+              <tr>
+                <td>${e.empNumber}</td>
+                <td>${e.startDate} → ${e.endDate}</td>
+                <td><a href="${e.fileUrl}" target="_blank">📎 عرض</a></td>
+                <td>✅ مقبول</td>
+              </tr>`;
+          }
+        }
+      });
+    });
+
+    // ✅ موافقة التيم ليدر
+    window.approveExcuse=async(id)=>{
+      const excuseRef=ref(db,"excuses/"+id);
+      await update(excuseRef,{status:"approved",approvedBy:currentUserEmail});
+      alert("✅ تم قبول العذر");
+    }
   </script>
 </body>
 </html>
