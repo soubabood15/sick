@@ -79,6 +79,7 @@
     // ✅ Firebase config
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCakP9nqvZuFZO3mXQ3jPBDT3JOcH0W3jY",
@@ -86,18 +87,18 @@
       projectId: "sick-leave-80f29",
       storageBucket: "sick-leave-80f29.appspot.com",
       messagingSenderId: "381297448748",
-      appId: "1:381297448748:web:9090c072007c0fc7fd3e89"
+      appId: "1:381297448748:web:9090c072007c0fc7fd3e89",
+      databaseURL: "https://sick-leave-80f29-default-rtdb.firebaseio.com/"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getDatabase(app);
+    const excusesRef = ref(db, "excuses");
 
     // ✅ Cloudinary config
     const CLOUD_NAME = "dq0y6h0z6";   
     const UPLOAD_PRESET = "sicklLcs"; 
-
-    // مصفوفة مؤقتة بدل قاعدة بيانات
-    let excuses = [];
 
     // عناصر DOM
     const loginBox = document.getElementById("loginBox");
@@ -119,8 +120,9 @@
     const approvedExcusesTable = document.getElementById("approvedExcuses");
 
     let currentUser = null;
+    let excuses = {};
 
-    // ✅ تسجيل الدخول من Firebase
+    // ✅ تسجيل الدخول
     btnLogin.addEventListener("click", async () => {
       const email = emailEl.value.trim().toLowerCase();
       const password = passwordEl.value.trim();
@@ -136,17 +138,15 @@
       }
     });
 
-    // ✅ متابعة حالة المستخدم
+    // ✅ متابعة الدخول
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
         loginBox.classList.add("hidden");
         if (user.email.endsWith("@emp.com")) {
           employeeArea.classList.remove("hidden");
-          refreshMyExcuses();
         } else if (user.email.endsWith("@tl.com")) {
           leaderArea.classList.remove("hidden");
-          refreshAllExcuses();
         }
       } else {
         currentUser = null;
@@ -166,15 +166,16 @@
       const days = daysEl.value.trim();
       const file = fileEl.files[0];
 
-      const hasPending = excuses.some(e => e.email === currentUser.email && e.status === "بانتظار");
-      if (hasPending) {
-        uploadStatus.textContent = "⚠️ لديك عذر بانتظار القبول. لا يمكنك رفع آخر.";
-        return;
-      }
-
       if (!empId || !days || !file) { 
         uploadStatus.textContent = "⚠️ أدخل كل الحقول"; 
         return; 
+      }
+
+      // تحقق إذا عنده عذر بانتظار
+      const hasPending = Object.values(excuses).some(e => e.email === currentUser.email && e.status === "بانتظار");
+      if (hasPending) {
+        uploadStatus.textContent = "⚠️ لديك عذر بانتظار القبول. لا يمكنك رفع آخر.";
+        return;
       }
 
       uploadStatus.textContent = "⏳ جاري الرفع...";
@@ -189,48 +190,60 @@
         });
         const data = await res.json();
 
-        const excuse = {
-          id: Date.now(),
+        await push(excusesRef, {
           empId,
           days,
           url: data.secure_url,
           status: "بانتظار",
           acceptedAt: null,
-          email: currentUser.email
-        };
-        excuses.push(excuse);
+          email: currentUser.email,
+          createdAt: Date.now()
+        });
+
         uploadStatus.textContent = "✅ تم رفع العذر";
         empIdEl.value = ""; daysEl.value = ""; fileEl.value = "";
-        refreshMyExcuses();
       } catch (err) {
         console.error(err);
         uploadStatus.textContent = "❌ خطأ في الرفع";
       }
     });
 
+    // ✅ متابعة الأعذار
+    onValue(excusesRef, (snap) => {
+      excuses = snap.val() || {};
+      refreshMyExcuses();
+      refreshAllExcuses();
+      cleanupExcuses();
+    });
+
     // ✅ تحديث أعذار الموظف
     function refreshMyExcuses(){
+      if (!currentUser || !currentUser.email.endsWith("@emp.com")) return;
       myExcusesTable.innerHTML = "";
-      excuses.filter(e => e.email === currentUser.email).forEach(e => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
-                        <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
-                        <td>${e.status}</td>`;
-        myExcusesTable.appendChild(tr);
+      Object.entries(excuses).forEach(([id, e]) => {
+        if (e.email === currentUser.email) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
+                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
+                          <td>${e.status}</td>`;
+          myExcusesTable.appendChild(tr);
+        }
       });
     }
 
     // ✅ تحديث أعذار التيم ليدر
     function refreshAllExcuses(){
+      if (!currentUser || !currentUser.email.endsWith("@tl.com")) return;
       pendingExcusesTable.innerHTML = "";
       approvedExcusesTable.innerHTML = "";
-      excuses.forEach(e => {
+
+      Object.entries(excuses).forEach(([id, e]) => {
         const tr = document.createElement("tr");
         if (e.status === "بانتظار") {
           tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
                           <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
                           <td>${e.status}</td>
-                          <td><button class="success" onclick="acceptExcuse(${e.id})">قبول ✅</button></td>`;
+                          <td><button class="success" onclick="acceptExcuse('${id}')">قبول ✅</button></td>`;
           pendingExcusesTable.appendChild(tr);
         } else if (e.status === "تم القبول") {
           tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
@@ -242,24 +255,22 @@
     }
 
     // ✅ قبول العذر
-    window.acceptExcuse = (id) => {
-      excuses = excuses.map(e => 
-        e.id===id ? {...e, status:"تم القبول", acceptedAt: Date.now()} : e
-      );
-      refreshAllExcuses();
-      refreshMyExcuses();
+    window.acceptExcuse = async (id) => {
+      await update(ref(db, "excuses/" + id), {
+        status: "تم القبول",
+        acceptedAt: Date.now()
+      });
     };
 
     // ✅ تنظيف الأعذار المقبولة بعد 3 أيام
-    function cleanupExcuses(){
+    async function cleanupExcuses(){
       const now = Date.now();
-      excuses = excuses.filter(e => 
-        !(e.status==="تم القبول" && e.acceptedAt && (now - e.acceptedAt > 3*24*60*60*1000))
-      );
-      refreshMyExcuses();
-      refreshAllExcuses();
+      Object.entries(excuses).forEach(async ([id, e]) => {
+        if (e.status === "تم القبول" && e.acceptedAt && (now - e.acceptedAt > 3*24*60*60*1000)) {
+          await remove(ref(db, "excuses/" + id));
+        }
+      });
     }
-    setInterval(cleanupExcuses, 60000); // كل دقيقة
   </script>
 </body>
 </html>
