@@ -25,7 +25,8 @@
   <!-- تسجيل الدخول -->
   <div id="loginBox" class="card">
     <h3>🔑 تسجيل دخول</h3>
-    <input type="email" id="email" placeholder="أدخل الإيميل (مثال: ali@emp.com أو leader@tl.com)" />
+    <input type="email" id="email" placeholder="الإيميل (مثال: ali@emp.com أو leader@tl.com)" />
+    <input type="password" id="password" placeholder="كلمة المرور" />
     <button id="btnLogin">دخول</button>
     <p id="loginError" style="color:red;"></p>
   </div>
@@ -89,6 +90,7 @@
 
     // ✅ إعداد Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
     import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -102,12 +104,14 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
     const excusesRef = ref(db, "excuses");
 
     // ✅ عناصر الصفحة
     const loginBox=document.getElementById("loginBox");
     const emailEl=document.getElementById("email");
+    const passEl=document.getElementById("password");
     const btnLogin=document.getElementById("btnLogin");
     const loginError=document.getElementById("loginError");
 
@@ -132,38 +136,46 @@
     let currentRole="";
 
     // ✅ تسجيل الدخول
-    btnLogin.addEventListener("click", ()=>{
+    btnLogin.addEventListener("click", async ()=>{
       const email=emailEl.value.trim().toLowerCase();
-      if(!email){ loginError.textContent="⚠️ أدخل الإيميل"; return; }
+      const pass=passEl.value;
 
-      if(email.endsWith("@emp.com")){
-        currentUserEmail=email;
-        currentRole="employee";
+      try{
+        await signInWithEmailAndPassword(auth,email,pass);
+        if(email.endsWith("@emp.com")){
+          currentRole="employee";
+        } else if(email.endsWith("@tl.com")){
+          currentRole="leader";
+        } else {
+          loginError.textContent="⚠️ الإيميل يجب أن ينتهي بـ @emp.com أو @tl.com";
+          return;
+        }
         loginBox.classList.add("hidden");
-        employeeArea.classList.remove("hidden");
-      } else if(email.endsWith("@tl.com")){
-        currentUserEmail=email;
-        currentRole="leader";
-        loginBox.classList.add("hidden");
-        leaderArea.classList.remove("hidden");
+        if(currentRole==="employee") employeeArea.classList.remove("hidden");
+        if(currentRole==="leader") leaderArea.classList.remove("hidden");
+      }catch(err){
+        loginError.textContent="❌ خطأ: "+err.message;
+      }
+    });
+
+    // ✅ مراقبة حالة الدخول
+    onAuthStateChanged(auth,(user)=>{
+      if(user){
+        currentUserEmail=user.email;
       } else {
-        loginError.textContent="⚠️ الإيميل يجب أن ينتهي بـ @emp.com أو @tl.com";
+        currentUserEmail="";
+        currentRole="";
+        loginBox.classList.remove("hidden");
+        employeeArea.classList.add("hidden");
+        leaderArea.classList.add("hidden");
       }
     });
 
     // ✅ تسجيل الخروج
-    function logout(){
-      currentUserEmail="";
-      currentRole="";
-      employeeArea.classList.add("hidden");
-      leaderArea.classList.add("hidden");
-      loginBox.classList.remove("hidden");
-      emailEl.value="";
-    }
-    btnLogoutEmp.addEventListener("click", logout);
-    btnLogoutLeader.addEventListener("click", logout);
+    btnLogoutEmp.addEventListener("click", ()=> signOut(auth));
+    btnLogoutLeader.addEventListener("click", ()=> signOut(auth));
 
-    // ✅ رفع العذر (للموظف)
+    // ✅ رفع العذر (الموظف)
     btnSubmit?.addEventListener("click", async ()=>{
       if(!empNumber.value || !startDate.value || !endDate.value || !excuseFile.files[0]){
         alert("⚠️ أدخل كل البيانات");return;
