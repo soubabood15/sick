@@ -1,275 +1,363 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>📑 نظام رفع الأعذار الطبية</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>حاسبة CSAT إلى نهاية الشهر</title>
   <style>
-    body { font-family: Tahoma, sans-serif; background:#f4f6f9; padding:20px; }
-    .card { background:#fff; padding:20px; margin:15px auto; border-radius:8px;
-            max-width:650px; box-shadow:0 4px 10px rgba(0,0,0,.1); }
-    h2 { margin-top:0; }
-    label { display:block; margin:8px 0 5px; font-weight:bold; }
-    input, button { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px; }
-    button { cursor:pointer; font-weight:bold; }
-    .primary { background:#2980B9; color:white; border:none; }
-    .primary:hover { background:#1f6390; }
-    .success { background:#27ae60; color:#fff; border:none; }
-    .danger { background:#e74c3c; color:#fff; border:none; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #ddd; padding:8px; text-align:center; }
-    th { background:#f0f0f0; }
-    .hidden { display:none; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f2937;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      text-align: center;
+    }
+    .sub {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 24px;
+      line-height: 1.8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+    .field.full {
+      grid-column: 1 / -1;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    input {
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 16px;
+      background: #fff;
+    }
+    button {
+      margin-top: 18px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+    }
+    .results {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .result-box {
+      background: #f8fbff;
+      border: 1px solid #dbeafe;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .result-box h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: #1d4ed8;
+    }
+    .big {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 6px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .table-wrap {
+      margin-top: 18px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      white-space: nowrap;
+    }
+    th {
+      background: #eff6ff;
+      color: #1e40af;
+    }
+    .note {
+      margin-top: 16px;
+      padding: 14px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 12px;
+      color: #9a3412;
+      line-height: 1.8;
+    }
+    @media (max-width: 700px) {
+      .grid, .results {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card" id="loginBox">
-    <h2>🔑 تسجيل دخول</h2>
-    <input type="email" id="email" placeholder="الإيميل">
-    <input type="password" id="password" placeholder="كلمة المرور">
-    <button id="btnLogin" class="primary">دخول</button>
-    <p id="loginError" style="color:red"></p>
-  </div>
+  <div class="wrap">
+    <div class="card">
+      <h1>حاسبة CSAT إلى نهاية الشهر</h1>
+      <div class="sub">
+        تدخل أرقام النجوم الحالية والهدف المطلوب وكم DSAT ممكن تنأكل يوميًا<br>
+        والنظام يحسب تلقائيًا من تاريخ اليوم إلى نهاية الشهر
+      </div>
 
-  <!-- واجهة الموظف -->
-  <div id="employeeArea" class="hidden card">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h2>📤 رفع عذر طبي</h2>
-      <button id="btnLogoutEmp" class="danger">🚪 خروج</button>
+      <div class="grid">
+        <div class="field full">
+          <label for="agentName">اسم الموظف</label>
+          <input id="agentName" type="text" placeholder="مثال: dodx">
+        </div>
+
+        <div class="field">
+          <label for="oneStar">1 نجمة</label>
+          <input id="oneStar" type="number" min="0" value="0">
+        </div>
+
+        <div class="field">
+          <label for="twoStar">2 نجمة</label>
+          <input id="twoStar" type="number" min="0" value="0">
+        </div>
+
+        <div class="field">
+          <label for="threeStar">3 نجوم</label>
+          <input id="threeStar" type="number" min="0" value="0">
+        </div>
+
+        <div class="field">
+          <label for="fourStar">4 نجوم</label>
+          <input id="fourStar" type="number" min="0" value="0">
+        </div>
+
+        <div class="field">
+          <label for="fiveStar">5 نجوم</label>
+          <input id="fiveStar" type="number" min="0" value="0">
+        </div>
+
+        <div class="field">
+          <label for="targetPercent">الهدف المطلوب %</label>
+          <input id="targetPercent" type="number" min="1" max="99" value="70">
+        </div>
+
+        <div class="field full">
+          <label for="dailyExpectedDsat">كم DSAT ممكن تنأكل يوميًا</label>
+          <input id="dailyExpectedDsat" type="number" min="0" step="0.1" value="0">
+        </div>
+      </div>
+
+      <button onclick="calculatePlan()">احسب الخطة</button>
+
+      <div class="results" id="results" style="display:none;">
+        <div class="result-box">
+          <h3>CSAT الحالي</h3>
+          <div class="big" id="currentCsat">0%</div>
+          <div class="muted" id="currentCounts"></div>
+        </div>
+
+        <div class="result-box">
+          <h3>الأيام المتبقية لنهاية الشهر</h3>
+          <div class="big" id="daysLeft">0</div>
+          <div class="muted" id="dateInfo"></div>
+        </div>
+
+        <div class="result-box">
+          <h3>إجمالي الـ CSAT المطلوب</h3>
+          <div class="big" id="totalNeeded">0</div>
+          <div class="muted">هذا العدد المطلوب من اليوم إلى نهاية الشهر</div>
+        </div>
+
+        <div class="result-box">
+          <h3>المطلوب يوميًا</h3>
+          <div class="big" id="dailyNeeded">0</div>
+          <div class="muted">عدد التقييمات الإيجابية المطلوبة يوميًا</div>
+        </div>
+      </div>
+
+      <div class="table-wrap" id="tableWrap" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>البيان</th>
+              <th>القيمة</th>
+            </tr>
+          </thead>
+          <tbody id="detailsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="note" id="noteBox" style="display:none;"></div>
     </div>
-    <label>📌 الرقم الوظيفي</label>
-    <input type="text" id="empId" placeholder="مثال: 12345">
-
-    <label>📅 الأيام المطلوبة</label>
-    <input type="text" id="days" placeholder="مثال: الأحد، الإثنين">
-
-    <label>📷 صورة العذر الطبي</label>
-    <input type="file" id="excuseFile">
-
-    <button id="btnUpload" class="primary">إرسال العذر</button>
-    <p id="uploadStatus"></p>
-
-    <h3>📋 أعذاري</h3>
-    <table>
-      <thead><tr><th>الرقم</th><th>الأيام</th><th>الرابط</th><th>الحالة</th></tr></thead>
-      <tbody id="myExcuses"></tbody>
-    </table>
   </div>
 
-  <!-- واجهة التيم ليدر -->
-  <div id="leaderArea" class="hidden card">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h2>📑 مراجعة الأعذار</h2>
-      <button id="btnLogoutLead" class="danger">🚪 خروج</button>
-    </div>
+  <script>
+    function ceilSafe(value) {
+      if (!isFinite(value)) return 0;
+      return Math.max(0, Math.ceil(value));
+    }
 
-    <h3>🕓 الأعذار المعلقة</h3>
-    <table>
-      <thead><tr><th>الموظف</th><th>الأيام</th><th>الرابط</th><th>الحالة</th><th>إجراء</th></tr></thead>
-      <tbody id="pendingExcuses"></tbody>
-    </table>
+    function formatNumber(value) {
+      if (Number.isInteger(value)) return value.toString();
+      return value.toFixed(2);
+    }
 
-    <h3>✅ الأعذار المقبولة</h3>
-    <table>
-      <thead><tr><th>الموظف</th><th>الأيام</th><th>الرابط</th><th>الحالة</th></tr></thead>
-      <tbody id="approvedExcuses"></tbody>
-    </table>
-  </div>
+    function getLastDayOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
 
-  <script type="module">
-    // ✅ Firebase config
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-    import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+    function calculateRequiredPositive(csatCount, totalCount, targetRatio, extraDsat) {
+      // (csatCount + x) / (totalCount + x + extraDsat) >= targetRatio
+      const numerator = (targetRatio * (totalCount + extraDsat)) - csatCount;
+      const denominator = 1 - targetRatio;
+      return ceilSafe(numerator / denominator);
+    }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCakP9nqvZuFZO3mXQ3jPBDT3JOcH0W3jY",
-      authDomain: "sick-leave-80f29.firebaseapp.com",
-      projectId: "sick-leave-80f29",
-      storageBucket: "sick-leave-80f29.appspot.com",
-      messagingSenderId: "381297448748",
-      appId: "1:381297448748:web:9090c072007c0fc7fd3e89",
-      databaseURL: "https://sick-leave-80f29-default-rtdb.firebaseio.com/"
-    };
+    function calculatePlan() {
+      const agentName = document.getElementById("agentName").value.trim() || "الموظف";
+      const one = parseInt(document.getElementById("oneStar").value) || 0;
+      const two = parseInt(document.getElementById("twoStar").value) || 0;
+      const three = parseInt(document.getElementById("threeStar").value) || 0;
+      const four = parseInt(document.getElementById("fourStar").value) || 0;
+      const five = parseInt(document.getElementById("fiveStar").value) || 0;
+      const targetPercent = parseFloat(document.getElementById("targetPercent").value) || 70;
+      const dailyExpectedDsat = parseFloat(document.getElementById("dailyExpectedDsat").value) || 0;
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-    const excusesRef = ref(db, "excuses");
+      const today = new Date();
+      const total = one + two + three + four + five;
+      const csatCount = four + five;
+      const dsatCount = one + two + three;
 
-    // ✅ Cloudinary config
-    const CLOUD_NAME = "dq0y6h0z6";   
-    const UPLOAD_PRESET = "sicklLcs"; 
-
-    // عناصر DOM
-    const loginBox = document.getElementById("loginBox");
-    const employeeArea = document.getElementById("employeeArea");
-    const leaderArea = document.getElementById("leaderArea");
-    const emailEl = document.getElementById("email");
-    const passwordEl = document.getElementById("password");
-    const loginError = document.getElementById("loginError");
-    const btnLogin = document.getElementById("btnLogin");
-    const btnLogoutEmp = document.getElementById("btnLogoutEmp");
-    const btnLogoutLead = document.getElementById("btnLogoutLead");
-    const empIdEl = document.getElementById("empId");
-    const daysEl = document.getElementById("days");
-    const fileEl = document.getElementById("excuseFile");
-    const btnUpload = document.getElementById("btnUpload");
-    const uploadStatus = document.getElementById("uploadStatus");
-    const myExcusesTable = document.getElementById("myExcuses");
-    const pendingExcusesTable = document.getElementById("pendingExcuses");
-    const approvedExcusesTable = document.getElementById("approvedExcuses");
-
-    let currentUser = null;
-    let excuses = {};
-
-    // ✅ تسجيل الدخول
-    btnLogin.addEventListener("click", async () => {
-      const email = emailEl.value.trim().toLowerCase();
-      const password = passwordEl.value.trim();
-      if (!email || !password) {
-        loginError.textContent = "❌ أدخل الإيميل وكلمة المرور";
+      if (total <= 0) {
+        alert("أدخل التقييمات أولًا");
         return;
       }
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
-        console.error(err);
-        loginError.textContent = "❌ بيانات الدخول غير صحيحة";
-      }
-    });
 
-    // ✅ متابعة الدخول
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        loginBox.classList.add("hidden");
-        if (user.email.endsWith("@emp.com")) {
-          employeeArea.classList.remove("hidden");
-        } else if (user.email.endsWith("@tl.com")) {
-          leaderArea.classList.remove("hidden");
-        }
+      if (targetPercent <= 0 || targetPercent >= 100) {
+        alert("الهدف لازم يكون بين 1 و 99");
+        return;
+      }
+
+      const targetRatio = targetPercent / 100;
+      const currentCsat = (csatCount / total) * 100;
+
+      const lastDay = getLastDayOfMonth(today);
+      const msPerDay = 1000 * 60 * 60 * 24;
+
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const startOfLast = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate());
+
+      // شامل اليوم
+      let daysLeftInclusive = Math.floor((startOfLast - startOfToday) / msPerDay) + 1;
+      if (daysLeftInclusive < 1) daysLeftInclusive = 1;
+
+      const expectedTotalDsatUntilMonthEnd = dailyExpectedDsat * daysLeftInclusive;
+
+      const totalPositiveNeeded = calculateRequiredPositive(
+        csatCount,
+        total,
+        targetRatio,
+        expectedTotalDsatUntilMonthEnd
+      );
+
+      const dailyPositiveNeededExact = totalPositiveNeeded / daysLeftInclusive;
+      const dailyPositiveNeeded = Math.ceil(dailyPositiveNeededExact);
+
+      const projectedFinalTotal = total + expectedTotalDsatUntilMonthEnd + totalPositiveNeeded;
+      const projectedFinalCsatCount = csatCount + totalPositiveNeeded;
+      const projectedFinalCsatPercent = projectedFinalTotal > 0
+        ? ((projectedFinalCsatCount / projectedFinalTotal) * 100)
+        : 0;
+
+      document.getElementById("results").style.display = "grid";
+      document.getElementById("tableWrap").style.display = "block";
+      document.getElementById("noteBox").style.display = "block";
+
+      document.getElementById("currentCsat").textContent = currentCsat.toFixed(2) + "%";
+      document.getElementById("currentCounts").innerHTML =
+        `CSAT الحالي: ${csatCount} من ${total}<br>DSAT الحالي: ${dsatCount} من ${total}`;
+
+      document.getElementById("daysLeft").textContent = daysLeftInclusive;
+      document.getElementById("dateInfo").innerHTML =
+        `اليوم: ${startOfToday.toLocaleDateString('ar-EG')}<br>نهاية الشهر: ${lastDay.toLocaleDateString('ar-EG')}`;
+
+      document.getElementById("totalNeeded").textContent = totalPositiveNeeded;
+      document.getElementById("dailyNeeded").textContent = dailyPositiveNeeded;
+
+      const details = [
+        ["اسم الموظف", agentName],
+        ["1 نجمة", one],
+        ["2 نجمة", two],
+        ["3 نجوم", three],
+        ["4 نجوم", four],
+        ["5 نجوم", five],
+        ["إجمالي التقييمات الحالي", total],
+        ["عدد CSAT الحالي", csatCount],
+        ["عدد DSAT الحالي", dsatCount],
+        ["الهدف المطلوب", targetPercent + "%"],
+        ["الأيام المتبقية شامل اليوم", daysLeftInclusive],
+        ["DSAT المتوقع يوميًا", formatNumber(dailyExpectedDsat)],
+        ["إجمالي DSAT المتوقع لنهاية الشهر", formatNumber(expectedTotalDsatUntilMonthEnd)],
+        ["إجمالي CSAT المطلوب", totalPositiveNeeded],
+        ["المطلوب يوميًا بدقة", dailyPositiveNeededExact.toFixed(2)],
+        ["المطلوب يوميًا فعليًا", dailyPositiveNeeded],
+        ["النسبة المتوقعة عند الالتزام بالخطة", projectedFinalCsatPercent.toFixed(2) + "%"]
+      ];
+
+      const tbody = document.getElementById("detailsBody");
+      tbody.innerHTML = details.map(row => `
+        <tr>
+          <td>${row[0]}</td>
+          <td>${row[1]}</td>
+        </tr>
+      `).join("");
+
+      let note = `${agentName} يحتاج ${totalPositiveNeeded} تقييمًا إيجابيًا حتى نهاية الشهر للوصول إلى ${targetPercent}%، بمعدل ${dailyPositiveNeeded} يوميًا تقريبًا`;
+
+      if (dailyExpectedDsat > 0) {
+        note += ` مع افتراض ${formatNumber(dailyExpectedDsat)} DSAT يوميًا.`;
       } else {
-        currentUser = null;
-        loginBox.classList.remove("hidden");
-        employeeArea.classList.add("hidden");
-        leaderArea.classList.add("hidden");
-      }
-    });
-
-    // تسجيل خروج
-    btnLogoutEmp.addEventListener("click", () => signOut(auth));
-    btnLogoutLead.addEventListener("click", () => signOut(auth));
-
-    // ✅ رفع العذر
-    btnUpload.addEventListener("click", async () => {
-      const empId = empIdEl.value.trim();
-      const days = daysEl.value.trim();
-      const file = fileEl.files[0];
-
-      if (!empId || !days || !file) { 
-        uploadStatus.textContent = "⚠️ أدخل كل الحقول"; 
-        return; 
+        note += ` بدون DSAT إضافي متوقع.`;
       }
 
-      // تحقق إذا عنده عذر بانتظار
-      const hasPending = Object.values(excuses).some(e => e.email === currentUser.email && e.status === "بانتظار");
-      if (hasPending) {
-        uploadStatus.textContent = "⚠️ لديك عذر بانتظار القبول. لا يمكنك رفع آخر.";
-        return;
-      }
-
-      uploadStatus.textContent = "⏳ جاري الرفع...";
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", UPLOAD_PRESET);
-
-      try {
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
-          method: "POST",
-          body: formData
-        });
-        const data = await res.json();
-
-        await push(excusesRef, {
-          empId,
-          days,
-          url: data.secure_url,
-          status: "بانتظار",
-          acceptedAt: null,
-          email: currentUser.email,
-          createdAt: Date.now()
-        });
-
-        uploadStatus.textContent = "✅ تم رفع العذر";
-        empIdEl.value = ""; daysEl.value = ""; fileEl.value = "";
-      } catch (err) {
-        console.error(err);
-        uploadStatus.textContent = "❌ خطأ في الرفع";
-      }
-    });
-
-    // ✅ متابعة الأعذار
-    onValue(excusesRef, (snap) => {
-      excuses = snap.val() || {};
-      refreshMyExcuses();
-      refreshAllExcuses();
-      cleanupExcuses();
-    });
-
-    // ✅ تحديث أعذار الموظف
-    function refreshMyExcuses(){
-      if (!currentUser || !currentUser.email.endsWith("@emp.com")) return;
-      myExcusesTable.innerHTML = "";
-      Object.entries(excuses).forEach(([id, e]) => {
-        if (e.email === currentUser.email) {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
-                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
-                          <td>${e.status}</td>`;
-          myExcusesTable.appendChild(tr);
-        }
-      });
-    }
-
-    // ✅ تحديث أعذار التيم ليدر
-    function refreshAllExcuses(){
-      if (!currentUser || !currentUser.email.endsWith("@tl.com")) return;
-      pendingExcusesTable.innerHTML = "";
-      approvedExcusesTable.innerHTML = "";
-
-      Object.entries(excuses).forEach(([id, e]) => {
-        const tr = document.createElement("tr");
-        if (e.status === "بانتظار") {
-          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
-                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
-                          <td>${e.status}</td>
-                          <td><button class="success" onclick="acceptExcuse('${id}')">قبول ✅</button></td>`;
-          pendingExcusesTable.appendChild(tr);
-        } else if (e.status === "تم القبول") {
-          tr.innerHTML = `<td>${e.empId}</td><td>${e.days}</td>
-                          <td><a href="${e.url}" target="_blank">📎 عرض</a></td>
-                          <td>${e.status}</td>`;
-          approvedExcusesTable.appendChild(tr);
-        }
-      });
-    }
-
-    // ✅ قبول العذر
-    window.acceptExcuse = async (id) => {
-      await update(ref(db, "excuses/" + id), {
-        status: "تم القبول",
-        acceptedAt: Date.now()
-      });
-    };
-
-    // ✅ تنظيف الأعذار المقبولة بعد 3 أيام
-    async function cleanupExcuses(){
-      const now = Date.now();
-      Object.entries(excuses).forEach(async ([id, e]) => {
-        if (e.status === "تم القبول" && e.acceptedAt && (now - e.acceptedAt > 3*24*60*60*1000)) {
-          await remove(ref(db, "excuses/" + id));
-        }
-      });
+      document.getElementById("noteBox").textContent = note;
     }
   </script>
 </body>
